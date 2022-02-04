@@ -1,0 +1,261 @@
+{% extends "bootstrap/base.html" %}
+{% import  "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Projeto de Integração{% endblock %}
+
+{% block content %}
+<style>
+    .btn-voto {
+        min-width: 250px;
+        font-size: 3rem;
+    }
+
+    #paragrafos {
+        margin: 1rem;
+        padding: 1rem;
+        height: 50rem;
+        overflow: scroll;
+    }
+
+    #ver-mais-box {
+        display: none;
+    }
+
+    #resultado-deputados {
+        display: none;
+    }
+
+    #resultado-partidos {
+        display: none;
+    }
+
+    #deputados-btn {
+        display: none;
+    }
+
+    #partidos-btn {
+        display: none;
+    }
+
+</style>
+<div class="container">
+    <div class="page-header">
+        <h1>Projeto de Integração</h1>
+    </div>
+    <div class="page-body">
+        <h4 id="codigo"></h4>
+        <h2 id="titulo"></h2>
+        <h3 id="sub-titulo"></h3>
+        <div id="infomacao" class="alert alert-info" role="alert">
+            <p id="popularidade"></p>
+        </div>
+        <div id="paragrafos">
+            <div id="primeiros-paragrafos"></div>
+            <button id="ver-mais-btn" class="btn btn-primary" type="button">
+                Ver mais
+            </button>
+            <div id="ver-mais-box">
+                <div class="card card-body">
+                    <div id="restante-dos-paragrafos"></div>
+                </div>
+            </div>
+            <a href="#link" id="fonte-oficial" class="btn btn-info" role="button" target="_blank">Mais informações na fonte oficial</a>
+        </div>
+        <div id="resposta" class="col-md-12 text-center">
+            <button id="concordo-btn" type="button" class="btn btn-light btn-lg btn-voto">👍 Concordo</button>
+            <button id="discordo-btn" type="button" class="btn btn-light btn-lg btn-voto">👎 Discordo</button>
+        </div>
+        <button id="deputados-btn" type="button" class="btn btn-light btn-lg">Exibir Deputados</button>
+        <button id="partidos-btn" type="button" class="btn btn-light btn-lg">Exibir Partidos</button>
+        <div id="resultado-deputados">
+            <h3>Deputados</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">Nome do Deputado</th>
+                    <th scope="col">Partido</th>
+                    <th scope="col">Pontuação</th>
+                    <th scope="col">Propostas</th>
+                </tr>
+                </thead>
+                <tbody id="table-body-deputados">
+                </tbody>
+            </table>
+        </div>
+        <div id="resultado-partidos">
+            <h3>Partidos</h3>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th scope="col">Partido</th>
+                    <th scope="col">Pontuação</th>
+                    <th scope="col">Propostas</th>
+                </tr>
+                </thead>
+                <tbody id="table-body-partidos">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    let url = "http://127.0.0.1:5000/hello";
+    let pergunta_atual = 0
+    let perguntas;
+    let quantidade_total_de_perguntas = 0;
+    let votos = [];
+    let exibirVerMais = false;
+
+    let ver_mais_btn = document.getElementById("ver-mais-btn");
+    ver_mais_btn.addEventListener("click", verMais);
+
+    let deputados_btn = document.getElementById("deputados-btn");
+    deputados_btn.addEventListener("click", exibirDeputados);
+
+    let partidos_btn = document.getElementById("partidos-btn");
+    partidos_btn.addEventListener("click", exibirPartidos);
+
+    let concordo_btn = document.getElementById("concordo-btn");
+    concordo_btn.addEventListener("click", vota);
+    concordo_btn.setAttribute('id_proposta','Sim');
+    
+    let discordo_btn = document.getElementById("discordo-btn");
+    discordo_btn.addEventListener("click", vota);
+    discordo_btn.setAttribute('id_proposta','Não');
+
+    function exibirDeputados() {
+        document.getElementById("resultado-deputados").style.display = "block";
+        document.getElementById("resultado-partidos").style.display = "none";
+    }
+
+    function exibirPartidos() {
+        document.getElementById("resultado-partidos").style.display = "block";
+        document.getElementById("resultado-deputados").style.display = "none";
+    }
+
+    function verMais() {
+        if (exibirVerMais) {
+            ver_mais_btn.innerHTML = "Ver mais";
+            document.getElementById("ver-mais-box").style.display = "none";
+        } else {
+            ver_mais_btn.innerHTML = "Ver menos";
+            document.getElementById("ver-mais-box").style.display = "block";
+        }
+
+        exibirVerMais = !exibirVerMais;
+    }
+
+    function vota(event) {
+        votos.push({
+            "id_proposta": perguntas[pergunta_atual].id_proposta,
+            "voto": event.currentTarget.attributes.id_proposta.value
+        })
+
+        pergunta_atual++;
+
+        if (pergunta_atual >= quantidade_total_de_perguntas) {
+            document.getElementById("codigo").innerHTML = "";
+            document.getElementById("titulo").innerHTML = "";
+            document.getElementById("sub-titulo").innerHTML = "";
+            document.getElementById("popularidade").innerHTML = "";
+            document.getElementById("paragrafos").style.display = "none";
+            document.getElementById("resposta").innerHTML = "";
+            document.getElementById("infomacao").innerHTML = "";
+            document.getElementById("resultado-deputados").style.display = "block";
+
+            make_post(votos);
+        } else {
+            exibe_pergunta(perguntas[pergunta_atual]);
+        }
+    }
+
+    fetch(url)
+        .then(async r=> console.log(trata_retorno(await r.json())))
+        .catch(e=>console.error('Error: ' + e));
+
+    function exibe_resultado(response) {
+        let text = "";
+        let deputados = response["deputados"];
+        let partidos = response["partidos"];
+
+        for (i in deputados) {
+            r = deputados[i];
+
+            let propostas_texto = "";
+            for (y in r['propostas']) {
+                propostas_texto += "- " + r['propostas'][y]['codigo'] + ": " + r['propostas'][y]['titulo'] + " (" + r['propostas'][y]['voto'] + ") <br>"
+            }
+
+            text += "<tr><td>" + r['nome_do_deputado'] + "</td><td>" + r['nome_do_partido'] + "</td><td>" + r['pontuacao'] + "</td><td>" + propostas_texto + "</td></tr>";
+        }
+
+        document.getElementById("table-body-deputados").innerHTML = text;
+        text = "";
+
+        for (i in partidos) {
+            r = partidos[i];
+
+            let propostas_texto = "";
+            for (y in r['propostas']) {
+                propostas_texto += "- " + r['propostas'][y]['codigo'] + ": " + r['propostas'][y]['titulo'] + " (" + r['propostas'][y]['voto'] + ") <br>"
+            }
+
+            text += "<tr><td>" + r['nome_do_partido'] + "</td><td>" + r['pontuacao'] + "</td><td>" + propostas_texto + "</td></tr>";
+        }
+
+        document.getElementById("table-body-partidos").innerHTML = text;
+
+        document.getElementById("deputados-btn").style.display = "block";
+        document.getElementById("partidos-btn").style.display = "block";
+    }
+
+    function make_post(data) {
+        fetch("/resultado", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(data)
+        }).then(res => {
+            console.log("Request complete! response:", res.json().then(r => exibe_resultado(r)));
+        });
+    }
+
+    function trata_retorno(result) {
+        perguntas = result;
+        quantidade_total_de_perguntas = perguntas.length;
+        exibe_pergunta(perguntas[pergunta_atual])
+    }
+
+    function exibe_pergunta(pergunta) {
+        document.getElementById("codigo").innerHTML = pergunta.codigo;
+        document.getElementById("titulo").innerHTML = pergunta.titulo;
+        document.getElementById("sub-titulo").innerHTML = pergunta["sub-titulo"];
+        document.getElementById("popularidade").innerHTML = "Popularidade: " + pergunta.votos_publicos + " votos públicos";
+        document.getElementById("primeiros-paragrafos").innerHTML = "";
+        document.getElementById("restante-dos-paragrafos").innerHTML = "";
+        document.getElementById("fonte-oficial").href = pergunta.url;
+
+        let paragrafos = pergunta.paragrafos.split(". ");
+
+        if (paragrafos.length <= 1) {
+            paragrafos = pergunta.paragrafos.split(".");
+        }
+
+        let primeirosParagrafos = paragrafos.splice(0, 3);
+        let restanteDosParagrafos = paragrafos;
+
+        for (i in primeirosParagrafos) {
+            const p = document.createElement("p");
+            const node = document.createTextNode(paragrafos[i]);
+            p.appendChild(node);
+            document.getElementById("primeiros-paragrafos").appendChild(p);
+        }
+
+        for (i in restanteDosParagrafos) {
+            const p = document.createElement("p");
+            const node = document.createTextNode(paragrafos[i]);
+            p.appendChild(node);
+            document.getElementById("restante-dos-paragrafos").appendChild(p);
+        }
+    }
+</script>
+{% endblock %}

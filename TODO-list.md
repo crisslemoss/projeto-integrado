@@ -36,8 +36,12 @@ https://www.camara.leg.br/noticias/665270-projeto-permite-que-radio-comunitaria-
 - Analise dos arquivos (.txt) tabulados com os votos, fazer a leitura com Python
 - Extrair os dados das paginas (4 páginas - web scraping)
  - Ler os votos e os deputados de cada PL se o plano de ler os .txts não der certo
- - Ler a quantidade de votos publicos em cada PL
+ - Ler a quantidade de votos publicos em cada PL (pegar do grafico)
  - Ler o "entenda a proposta" (Titulo, sub-titulo e 3 primeiros paragrafos)
+
+ Tabela PL_PLP_PEC (id, titulo, sub-titulo, paragrafos, quantidade_de_votos_publicos, data_de_criacao)
+
+ data_de_criacao -> 
 
 ### Sprint 2
 - Escrever o artigo
@@ -50,7 +54,18 @@ https://www.camara.leg.br/noticias/665270-projeto-permite-que-radio-comunitaria-
      10. Referências	   
 
 - Tratar os dados e guardar em arquivos .csv
+ - endpoint que pega um numero X de propostas e devolve uma estrutura JSON pro front-end
+ - montar a tela das perguntas e guardar as respostas (1, 0, 0, 1)
+ - pega a votacao de uma proposta por Id (votosDeputados.csv filtrar uf e proposta_id) (IndicacaoVotoPartido.csv filtrar uf e proposta_id) 
+ ordenar pelo top X e invertido para os dois casos, deputados e partido, calculo de porcentagem
+ - endpoint que envia as respostas e devolve a lista de deputados e partidos em JSON
+ - criar uma tela pra exibir os resultados
+
 - Web app de um quiz básico que le de um arquivo .csv as perguntas e guarda as respostas
 - Algoritmo para coeficiente de correlacao [aula 04](https://github.com/andredarcie/my-data-science-notebooks/blob/master/estatistica-e-aplicacoes/aula04_pratica.ipynb)
 - Deploy no Heroku da aplicação web
+
+20/11/2021 - Versao preliminar
+29/01/2022 - Relatorio tecnico
+05/02/2022 - Defesa
 
